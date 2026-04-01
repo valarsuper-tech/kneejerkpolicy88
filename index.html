@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS Indonesia 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0F1117;
+  --surface: #181B25;
+  --surface2: #1E2130;
+  --border: #2A2E3F;
+  --text: #E8E6DF;
+  --muted: #6B7080;
+  --accent: #4ADE80;
+  --accent-dim: #1A3D28;
+  --blue: #60A5FA;
+  --blue-dim: #1A2840;
+  --red: #F87171;
+  --red-dim: #3D1A1A;
+  --yellow: #FBBF24;
+  --cell: 40px;
+  --gap: 2px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 20;
+}
+.logo { font-family: 'Playfair Display', serif; font-size: 20px; letter-spacing: 0.03em; }
+.logo em { color: var(--yellow); font-style: normal; }
+.badge {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  background: var(--yellow); color: #1A1200;
+  padding: 2px 7px; border-radius: 3px; margin-left: 8px;
+  vertical-align: middle;
+}
+.score-bar { display: flex; gap: 1.5rem; }
+.score-item { font-size: 12px; color: var(--muted); }
+.score-item strong { color: var(--text); font-size: 16px; display: block; font-weight: 600; text-align: right; }
+
+main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+.kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+.headline { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--text); margin-bottom: 1.5rem; line-height: 1.3; }
+.headline span { color: var(--yellow); }
+
+.game-layout { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
+.grid-section { flex-shrink: 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, var(--cell));
+  grid-template-rows: repeat(10, var(--cell));
+  gap: var(--gap);
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cell {
+  width: var(--cell); height: var(--cell);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+  position: relative;
+  background: var(--bg);
+  color: var(--text);
+  letter-spacing: 0.05em;
+  transition: background 0.1s;
+}
+.cell.empty { background: #090B10; }
+.cell.active { background: var(--surface2); cursor: pointer; }
+.cell.active:hover { background: #252840; }
+.cell.active.selected { background: var(--blue-dim); color: var(--blue); }
+.cell.active.correct { background: var(--accent-dim); color: var(--accent); }
+.cell.active.flash-wrong { background: var(--red-dim); color: var(--red); }
+.num {
+  position: absolute; top: 2px; left: 3px;
+  font-size: 7.5px; font-weight: 600; opacity: 0.45; line-height: 1;
+}
+
+.right-panel { flex: 1; min-width: 260px; max-width: 360px; }
+
+.clue-dir-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin: 1.2rem 0 8px;
+  border-bottom: 1px solid var(--border); padding-bottom: 6px;
+}
+.clue-dir-header:first-child { margin-top: 0; }
+.dir-icon { font-size: 14px; }
+
+.clue-item {
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12.5px; color: var(--muted);
+  border: 1px solid transparent; margin-bottom: 3px;
+  transition: all 0.1s; line-height: 1.5;
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.clue-item:hover { background: var(--surface2); color: var(--text); }
+.clue-item.active-clue { background: var(--blue-dim); border-color: #2A4A70; color: var(--blue); }
+.clue-item.done { opacity: 0.25; pointer-events: none; text-decoration: line-through; }
+.clue-num {
+  min-width: 22px; height: 18px; background: var(--border);
+  border-radius: 3px; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px; color: var(--text);
+}
+.clue-item.active-clue .clue-num { background: var(--blue); color: #050D1A; }
+
+.input-area { margin-top: 1.5rem; }
+.input-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+
+.active-clue-text {
+  font-size: 13px; color: var(--text); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 8px 12px; margin-bottom: 10px; min-height: 38px;
+  line-height: 1.5; display: none;
+}
+
+.input-row { display: flex; gap: 8px; }
+input[type="text"] {
+  flex: 1; height: 44px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface2);
+  font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600;
+  color: var(--text); padding: 0 12px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  outline: none; transition: border-color 0.15s;
+}
+input[type="text"]::placeholder { font-size: 13px; letter-spacing: 0; font-weight: 400; color: var(--muted); }
+input[type="text"]:focus { border-color: var(--blue); }
+
+button.btn {
+  height: 44px; padding: 0 18px;
+  background: var(--text); color: var(--bg);
+  border: none; border-radius: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.05em; flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+button.btn:hover { opacity: 0.8; }
+button.btn.secondary {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border); font-size: 12px;
+}
+button.btn.secondary:hover { color: var(--text); border-color: var(--muted); }
+
+.feedback { margin-top: 8px; font-size: 13px; min-height: 20px; font-weight: 500; }
+.feedback.ok { color: var(--accent); }
+.feedback.err { color: var(--red); }
+
+.progress-bar-wrap { margin-top: 1.2rem; }
+.progress-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; display: flex; justify-content: space-between; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.4s ease; }
+
+.share-area {
+  margin-top: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.share-label { font-size: 12px; color: var(--muted); font-weight: 500; flex-shrink: 0; }
+.share-url {
+  flex: 1; font-size: 11px; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 10px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: pointer; user-select: all; min-width: 80px;
+}
+.copy-btn {
+  height: 32px; padding: 0 14px;
+  background: var(--text); color: var(--bg);
+  border: none; border-radius: 4px;
+  font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+}
+.copy-btn:hover { opacity: 0.8; }
+
+.win-banner {
+  display: none;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 1.5rem 2rem; margin-top: 2rem; text-align: center;
+}
+.win-banner h2 {
+  font-family: 'Playfair Display', serif; font-size: 28px;
+  color: var(--accent); margin-bottom: 6px;
+}
+.win-banner p { font-size: 14px; color: #6ABF80; }
+
+.hint-area { margin-top: 1rem; }
+
+@media (max-width: 640px) {
+  :root { --cell: 30px; }
+  .game-layout { flex-direction: column; }
+  .right-panel { max-width: 100%; }
+  main { padding: 1rem 0.75rem 2rem; }
+  .headline { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TTS <em>Indonesia</em> <span class="badge">2026</span></div>
+  <div class="score-bar">
+    <div class="score-item"><strong id="sc-ok">0</strong>Benar</div>
+    <div class="score-item"><strong id="sc-left">12</strong>Sisa</div>
+  </div>
+</header>
+
+<main>
+  <div class="kicker">Teka-teki Silang</div>
+  <div class="headline">Seberapa paham kamu <span>isu Indonesia</span> terkini?</div>
+
+  <div class="game-layout">
+    <div class="grid-section">
+      <div class="grid" id="grid"></div>
+      <div class="share-area">
+        <span class="share-label">Bagikan:</span>
+        <span class="share-url" id="share-url">—</span>
+        <button class="copy-btn" onclick="copyLink()">Salin Link</button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="clue-dir-header"><span class="dir-icon">→</span> Mendatar</div>
+      <div id="clues-across"></div>
+      <div class="clue-dir-header"><span class="dir-icon">↓</span> Menurun</div>
+      <div id="clues-down"></div>
+
+      <div class="input-area">
+        <span class="input-label">Jawaban</span>
+        <div class="active-clue-text" id="active-clue-text"></div>
+        <div class="input-row">
+          <input type="text" id="ans-input" placeholder="Ketik jawaban..." maxlength="20" autocomplete="off" />
+          <button class="btn" onclick="submitAnswer()">Cek ↵</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-label">
+          <span>Progres</span>
+          <span id="pct-label">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+
+      <div class="hint-area">
+        <button class="btn secondary" onclick="showHint()">Tampilkan huruf pertama</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="win-banner" id="win-banner">
+    <h2>Luar biasa!</h2>
+    <p>Kamu berhasil menjawab semua 12 kata tentang isu Indonesia terkini 2026.<br>Tantang temanmu lewat link di atas!</p>
+  </div>
+</main>
+
+<script>
+// 12 kata — semua berkaitan isu Indonesia 2026
+// Grid 12 kolom x 10 baris
+const WORDS = [
+  // MENDATAR
+  { word:"PRABOWO",    row:0, col:0,  dir:"across", clue:"Presiden ke-8 Republik Indonesia yang mulai menjabat Oktober 2024" },
+  { word:"NUSANTARA",  row:2, col:0,  dir:"across", clue:"Nama ibu kota baru Indonesia yang sedang dibangun di Kalimantan Timur" },
+  { word:"INFLASI",    row:4, col:0,  dir:"across", clue:"Kenaikan harga secara umum; IHK Indonesia Februari 2026 tercatat 4,76% (yoy)" },
+  { word:"DEFISIT",    row:6, col:0,  dir:"across", clue:"APBN Indonesia per Februari 2026 mengalami ini sebesar Rp135,7 triliun" },
+  { word:"NIKEL",      row:8, col:0,  dir:"across", clue:"Komoditas unggulan Indonesia; produsen terbesar dunia, krusial untuk baterai EV" },
+  { word:"FOLU",       row:8, col:7,  dir:"across", clue:"Singkatan target emisi hutan Indonesia: ___ Net Sink 2030" },
+
+  // MENURUN
+  { word:"PANGAN",     row:0, col:0,  dir:"down",   clue:"Ketahanan ___ nasional; program prioritas pemerintahan Prabowo 2025-2026" },
+  { word:"RUPIAH",     row:0, col:4,  dir:"down",   clue:"Mata uang Indonesia yang dijaga stabilitasnya oleh Bank Indonesia di tengah gejolak global" },
+  { word:"BANSOS",     row:2, col:6,  dir:"down",   clue:"Bantuan sosial pemerintah; dikritik INFID sebagai 'obat pereda nyeri' bukan solusi struktural" },
+  { word:"IKN",        row:0, col:9,  dir:"down",   clue:"Singkatan Ibu Kota Negara baru Indonesia" },
+  { word:"LPDP",       row:2, col:11, dir:"down",   clue:"Lembaga pengelola dana pendidikan Indonesia yang tata kelolanya sedang ditinjau ulang 2026" },
+  { word:"ADAT",       row:6, col:3,  dir:"down",   clue:"Hak masyarakat ___ di Papua terkait konflik lahan sawit yang disorot 2026" },
+];
+
+const ROWS=10, COLS=12;
+let gridData=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+let numMap={}, wordNums={}, numCtr=1;
+let selected=null, correct=new Set();
+let hintUsed=new Set();
+
+WORDS.forEach(w=>{
+  let key=w.row+','+w.col;
+  if(!numMap[key]) numMap[key]=numCtr++;
+  wordNums[w.word+w.dir]=numMap[key];
+  for(let i=0;i<w.word.length;i++){
+    let r=w.dir==='across'?w.row:w.row+i;
+    let c=w.dir==='across'?w.col+i:w.col;
+    if(r<ROWS&&c<COLS){
+      if(!gridData[r][c]) gridData[r][c]={letter:w.word[i],words:[]};
+      gridData[r][c].words.push({word:w.word,dir:w.dir});
+    }
+  }
+});
+
+function buildGrid(){
+  const el=document.getElementById('grid');
+  el.innerHTML='';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const div=document.createElement('div');
+      div.className='cell';
+      div.id='c'+r+'_'+c;
+      if(gridData[r][c]){
+        div.classList.add('active');
+        let key=r+','+c;
+        if(numMap[key]){
+          const nb=document.createElement('span');
+          nb.className='num';
+          nb.textContent=numMap[key];
+          div.appendChild(nb);
+        }
+        div.onclick=()=>clickCell(r,c);
+      } else {
+        div.classList.add('empty');
+      }
+      el.appendChild(div);
+    }
+  }
+}
+
+function buildClues(){
+  ['across','down'].forEach(dir=>{
+    const el=document.getElementById('clues-'+dir);
+    el.innerHTML='';
+    WORDS.filter(w=>w.dir===dir).forEach(w=>{
+      const num=wordNums[w.word+w.dir];
+      const div=document.createElement('div');
+      div.className='clue-item';
+      div.id='clue-'+w.word+w.dir;
+      div.innerHTML=`<span class="clue-num">${num}</span><span>${w.clue}</span>`;
+      div.onclick=()=>selectWord(w);
+      el.appendChild(div);
+    });
+  });
+}
+
+function selectWord(w){
+  clearHighlight();
+  selected=w;
+  for(let i=0;i<w.word.length;i++){
+    let r=w.dir==='across'?w.row:w.row+i;
+    let c=w.dir==='across'?w.col+i:w.col;
+    const cell=document.getElementById('c'+r+'_'+c);
+    if(cell&&!correct.has(w.word+w.dir)) cell.classList.add('selected');
+  }
+  document.querySelectorAll('.clue-item').forEach(el=>el.classList.remove('active-clue'));
+  const ci=document.getElementById('clue-'+w.word+w.dir);
+  if(ci){ ci.classList.add('active-clue'); ci.scrollIntoView({block:'nearest'}); }
+  const actText=document.getElementById('active-clue-text');
+  actText.style.display='block';
+  const num=wordNums[w.word+w.dir];
+  actText.textContent=num+'. '+w.clue;
+  document.getElementById('ans-input').value='';
+  document.getElementById('ans-input').focus();
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+}
+
+function clickCell(r,c){
+  const cell=gridData[r][c];
+  if(!cell) return;
+  const ws=cell.words.filter(ww=>!correct.has(ww.word+ww.dir));
+  if(!ws.length) return;
+  if(selected&&ws.find(ww=>ww.word===selected.word&&ww.dir===selected.dir)){
+    const other=ws.find(ww=>ww.word!==selected.word||ww.dir!==selected.dir);
+    if(other){
+      const wObj=WORDS.find(ww=>ww.word===other.word&&ww.dir===other.dir);
+      if(wObj){selectWord(wObj);return;}
+    }
+  }
+  const wObj=WORDS.find(ww=>ww.word===ws[0].word&&ww.dir===ws[0].dir);
+  if(wObj) selectWord(wObj);
+}
+
+function clearHighlight(){
+  document.querySelectorAll('.cell.selected').forEach(c=>c.classList.remove('selected'));
+}
+
+function submitAnswer(){
+  if(!selected){setFeedback('Pilih kata terlebih dahulu.',false);return;}
+  const ans=document.getElementById('ans-input').value.trim().toUpperCase();
+  if(!ans) return;
+  if(ans===selected.word){
+    correct.add(selected.word+selected.dir);
+    for(let i=0;i<selected.word.length;i++){
+      let r=selected.dir==='across'?selected.row:selected.row+i;
+      let c=selected.dir==='across'?selected.col+i:selected.col;
+      const cell=document.getElementById('c'+r+'_'+c);
+      if(cell){
+        cell.classList.remove('selected');
+        cell.classList.add('correct');
+        cell.textContent=selected.word[i];
+        const key=r+','+c;
+        if(numMap[key]){const nb=document.createElement('span');nb.className='num';nb.textContent=numMap[key];cell.appendChild(nb);}
+      }
+    }
+    const ci=document.getElementById('clue-'+selected.word+selected.dir);
+    if(ci) ci.classList.add('done');
+    setFeedback('Benar! +1',true);
+    selected=null;
+    document.getElementById('active-clue-text').style.display='none';
+    updateScore();
+    if(correct.size===WORDS.length){
+      document.getElementById('win-banner').style.display='block';
+      setTimeout(()=>document.getElementById('win-banner').scrollIntoView({behavior:'smooth'}),300);
+    }
+  } else {
+    for(let i=0;i<selected.word.length;i++){
+      let r=selected.dir==='across'?selected.row:selected.row+i;
+      let c=selected.dir==='across'?selected.col+i:selected.col;
+      const cell=document.getElementById('c'+r+'_'+c);
+      if(cell){ cell.classList.add('flash-wrong'); setTimeout(()=>cell.classList.remove('flash-wrong'),500); }
+    }
+    const hint = ans.length>0 && selected.word.startsWith(ans) ? ' (huruf awal benar!)' : '';
+    setFeedback('Salah, coba lagi.' + hint, false);
+  }
+  document.getElementById('ans-input').value='';
+}
+
+function showHint(){
+  if(!selected){ setFeedback('Pilih kata dulu.',false); return; }
+  const key=selected.word+selected.dir;
+  if(hintUsed.has(key)){ setFeedback('Petunjuk sudah digunakan untuk kata ini.',false); return; }
+  hintUsed.add(key);
+  const r=selected.row, c=selected.col;
+  const cell=document.getElementById('c'+r+'_'+c);
+  if(cell&&!correct.has(key)){
+    const prev=cell.textContent.replace(/\d/g,'');
+    if(!prev){
+      cell.textContent=selected.word[0];
+      const nb=document.createElement('span');nb.className='num';
+      const km=r+','+c; if(numMap[km]){nb.textContent=numMap[km];cell.appendChild(nb);}
+    }
+  }
+  setFeedback('Huruf pertama: '+selected.word[0], true);
+}
+
+function setFeedback(txt,ok){
+  const el=document.getElementById('feedback');
+  el.textContent=txt;
+  el.className='feedback '+(ok?'ok':'err');
+}
+
+function updateScore(){
+  const n=correct.size, total=WORDS.length;
+  document.getElementById('sc-ok').textContent=n;
+  document.getElementById('sc-left').textContent=total-n;
+  const pct=Math.round(n/total*100);
+  document.getElementById('pct-label').textContent=pct+'%';
+  document.getElementById('progress-fill').style.width=pct+'%';
+}
+
+function copyLink(){
+  const url=window.location.href;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    btn.textContent='Tersalin!';
+    setTimeout(()=>btn.textContent='Salin Link',2000);
+  });
+}
+
+document.getElementById('ans-input').addEventListener('keydown',e=>{ if(e.key==='Enter') submitAnswer(); });
+document.getElementById('share-url').textContent=window.location.href;
+
+buildGrid();
+buildClues();
+updateScore();
+</script>
+</body>
+</html>
